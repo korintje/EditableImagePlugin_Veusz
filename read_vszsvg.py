@@ -23,9 +23,9 @@ class ReadVSZSVGPlugin(ToolsPlugin):
         import xml.etree.ElementTree as ET
 
         # Enable all commands under interface
-        available_commands = [command for command in dir(interface) if command.startswith('__') is False]
-        for command in available_commands:
-            exec(f"{command} = interface.{command}")
+        cmds = [cmd for cmd in dir(interface) if cmd.startswith('__') is False]
+        for cmd in cmds:
+            exec(f"{cmd} = interface.{cmd}")
 
         # get the .svg filepath
         filepath = fields['filepath']
