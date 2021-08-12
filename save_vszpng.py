@@ -22,6 +22,11 @@ class SaveVSZPNGPlugin(ToolsPlugin):
         """
         import veusz.qtall as qt
         import os, tempfile
+        import io
+        import struct
+        import warnings
+        import zlib
+        from array import array
         
         ##########################################################################
         # copied from "png.py" in the module pypng(https://github.com/drj11/pypng)
@@ -29,51 +34,12 @@ class SaveVSZPNGPlugin(ToolsPlugin):
         # in order to provide plugin as a one-file python file.
         # For main function, skip to "pypng module end".
         ##########################################################################
-        import collections
-        import io
-        import itertools
-        import math
-        import operator
-        import struct
-        import warnings
-        import zlib
-        from array import array
 
         signature = struct.pack('8B', 137, 80, 78, 71, 13, 10, 26, 10)
-        Resolution = collections.namedtuple('_Resolution', 'x y unit_is_meter')
 
         class Error(Exception):
             def __str__(self):
                 return self.__class__.__name__ + ': ' + ' '.join(self.args)
-
-        class FormatError(Error):
-            pass
-
-        class ProtocolError(Error):
-            pass
-
-        class ChunkError(FormatError):
-            pass
-
-        def write_chunk(outfile, tag, data=b''):
-            """
-            Write a PNG chunk to the output file, including length and
-            checksum.
-            """
-            data = bytes(data)
-            outfile.write(struct.pack("!I", len(data)))
-            outfile.write(tag)
-            outfile.write(data)
-            checksum = zlib.crc32(tag)
-            checksum = zlib.crc32(data, checksum)
-            checksum &= 2 ** 32 - 1
-            outfile.write(struct.pack("!I", checksum))
-
-        def write_chunks(out, chunks):
-            """Create a PNG file by writing out the chunks."""
-            out.write(signature)
-            for chunk in chunks:
-                write_chunk(out, *chunk)
 
         class Reader:
 
@@ -102,25 +68,25 @@ class SaveVSZPNGPlugin(ToolsPlugin):
                 elif file is not None:
                     self.file = file
                 else:
-                    raise ProtocolError("expecting filename, file or bytes array")
+                    raise Error("expecting filename, file or bytes array")
 
             def chunk(self, lenient=False):
                 self.validate_signature()
                 if not self.atchunk:
                     self.atchunk = self._chunk_len_type()
                 if not self.atchunk:
-                    raise ChunkError("No more chunks.")
+                    raise Error("No more chunks.")
                 length, type = self.atchunk
                 self.atchunk = None
 
                 data = self.file.read(length)
                 if len(data) != length:
-                    raise ChunkError(
+                    raise Error(
                         'Chunk %s too short for required %i octets.'
                         % (type, length))
                 checksum = self.file.read(4)
                 if len(checksum) != 4:
-                    raise ChunkError('Chunk %s too short for checksum.' % type)
+                    raise Error('Chunk %s too short for checksum.' % type)
                 verify = zlib.crc32(type)
                 verify = zlib.crc32(data, verify)
                 verify &= 2**32 - 1
@@ -133,7 +99,7 @@ class SaveVSZPNGPlugin(ToolsPlugin):
                     if lenient:
                         warnings.warn(message, RuntimeWarning)
                     else:
-                        raise ChunkError(message)
+                        raise Error(message)
                 return type, data
 
             def chunks(self):
@@ -148,42 +114,40 @@ class SaveVSZPNGPlugin(ToolsPlugin):
                     return
                 self.signature = self.file.read(8)
                 if self.signature != signature:
-                    raise FormatError("PNG file has invalid signature.")
+                    raise Error("PNG file has invalid signature.")
 
             def _chunk_len_type(self):
                 x = self.file.read(8)
                 if not x:
                     return None
                 if len(x) != 8:
-                    raise FormatError(
+                    raise Error(
                         'End of file whilst reading chunk length and type.')
                 length, type = struct.unpack('!I4s', x)
                 if length > 2 ** 31 - 1:
-                    raise FormatError('Chunk %s is too large: %d.' % (type, length))
+                    raise Error('Chunk %s is too large: %d.' % (type, length))
                 type_bytes = set(bytearray(type))
                 if not(type_bytes <= set(range(65, 91)) | set(range(97, 123))):
-                    raise FormatError(
+                    raise Error(
                         'Chunk %r has invalid Chunk Type.'
                         % list(type))
                 return length, type
 
-            def process_chunk(self, lenient=False):
-                type, data = self.chunk(lenient=lenient)
-                method = '_process_' + type.decode('ascii')
-                m = getattr(self, method, None)
-                if m:
-                    m(data)
+        def write_chunk(outfile, tag, data=b''):
+            data = bytes(data)
+            outfile.write(struct.pack("!I", len(data)))
+            outfile.write(tag)
+            outfile.write(data)
+            checksum = zlib.crc32(tag)
+            checksum = zlib.crc32(data, checksum)
+            checksum &= 2 ** 32 - 1
+            outfile.write(struct.pack("!I", checksum))
 
-        def decompress(data_blocks):
-            d = zlib.decompressobj()
-            for data in data_blocks:
-                yield bytearray(d.decompress(data))
-            yield bytearray(d.flush())
+        def write_chunks(out, chunks):
+            out.write(signature)
+            for chunk in chunks:
+                write_chunk(out, *chunk)
 
-        ##########################################################################
-        # pypng module end
-        ##########################################################################
-        
         # get the Node corresponding to the widget path given
         pagenum = fields['pagenumber'] - 1
         
@@ -207,7 +171,6 @@ class SaveVSZPNGPlugin(ToolsPlugin):
         interface.Export(filepath, page=pagenum)
 
         # Add chunk to the PNG image
-        # The three functions below were originally written by cfh008
         # https://stackoverflow.com/questions/9036152/insert-a-text-chunk-into-a-png-image/23180764
         def generate_chunk_tuple(type_flag, content):
             return tuple([type_flag, content])
