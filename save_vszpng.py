@@ -34,44 +34,26 @@ class SaveVSZPNGPlugin(ToolsPlugin):
         import itertools
         import math
         import operator
-        import re
         import struct
         import warnings
         import zlib
         from array import array
 
-        __all__ = ['Image', 'Reader', 'Writer', 'write_chunks', 'from_array']
         signature = struct.pack('8B', 137, 80, 78, 71, 13, 10, 26, 10)
         Resolution = collections.namedtuple('_Resolution', 'x y unit_is_meter')
-
-        def group(s, n):
-            return list(zip(* [iter(s)] * n))
-
-        def isarray(x):
-            return isinstance(x, array)
 
         class Error(Exception):
             def __str__(self):
                 return self.__class__.__name__ + ': ' + ' '.join(self.args)
 
         class FormatError(Error):
-            """
-            Problem with input file format.
-            In other words, PNG file does not conform to
-            the specification in some way and is invalid.
-            """
+            pass
 
         class ProtocolError(Error):
-            """
-            Problem with the way the programming interface has been used,
-            or the data presented to it.
-            """
+            pass
 
         class ChunkError(FormatError):
             pass
-
-        class Default:
-            """The default for the greyscale paramter."""
 
         def write_chunk(outfile, tag, data=b''):
             """
@@ -93,8 +75,6 @@ class SaveVSZPNGPlugin(ToolsPlugin):
             for chunk in chunks:
                 write_chunk(out, *chunk)
 
-        RegexModeDecode = re.compile("(LA?|RGBA?);?([0-9]*)", flags=re.IGNORECASE)
-
         class Reader:
 
             def __init__(self, _guess=None, filename=None, file=None, bytes=None):
@@ -109,7 +89,7 @@ class SaveVSZPNGPlugin(ToolsPlugin):
                 self.transparent = None
                 self.atchunk = None
                 if _guess is not None:
-                    if isarray(_guess):
+                    if isinstance(_guess, array):
                         bytes = _guess
                     elif isinstance(_guess, str):
                         filename = _guess

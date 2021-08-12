@@ -37,7 +37,6 @@ class LoadVSZPNGPlugin(ToolsPlugin):
         import zlib
         from array import array
 
-        __all__ = ['Image', 'Reader', 'Writer', 'write_chunks', 'from_array']
         signature = struct.pack('8B', 137, 80, 78, 71, 13, 10, 26, 10)
         Resolution = collections.namedtuple('_Resolution', 'x y unit_is_meter')
 
