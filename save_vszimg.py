@@ -115,7 +115,6 @@ class PNGReader:
     This is a subclass extracted from the library pypng (https://github.com/drj11/pypng)
     with removal of some unused functions.
     """
-
     def __init__(self, _guess=None, filename=None, file=None, bytes=None):
         keywords_supplied = (
             (_guess is not None) +
