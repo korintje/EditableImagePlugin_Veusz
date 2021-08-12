@@ -55,17 +55,19 @@ class SaveVSZImagePlugin(ToolsPlugin):
         if imgtype == "SVG":
             type_filter = "Images (*.svg *.SVG)"
             (filepath, fltr) = get_filepath(caption='Save', filter=type_filter)
-            if filepath[-4:] not in (".svg", ".SVG"):
-                filepath += ".svg"
-            interface.Export(filepath, page=page)
-            self.embed_script_to_svg(filepath, script)
+            if filepath:
+                if filepath[-4:] not in (".svg", ".SVG"):
+                    filepath += ".svg"
+                interface.Export(filepath, page=page)
+                self.embed_script_to_svg(filepath, script)
         else:
             type_filter = "Images (*.png *.PNG)"
             (filepath, fltr) = get_filepath(caption='Save', filter=type_filter)
-            if filepath[-4:] not in (".png", ".PNG"):
-                filepath += ".png" 
-            interface.Export(filepath, page=page)
-            self.embed_script_to_png(filepath, script)
+            if filepath: 
+                if filepath[-4:] not in (".png", ".PNG"):
+                    filepath += ".png" 
+                interface.Export(filepath, page=page)
+                self.embed_script_to_png(filepath, script)
     
     def embed_script_to_png(self, filepath, script):
         """
