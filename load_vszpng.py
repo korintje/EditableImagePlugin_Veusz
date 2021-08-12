@@ -20,24 +20,18 @@ class LoadVSZPNGPlugin(ToolsPlugin):
         Load "tEXt" chunk in the PNG file
         when the chunk text starts from "# Veusz" 
         """
+        
         import io
         import struct
         import warnings
         import zlib
         from array import array
-        ##########################################################################
-        # copied from "png.py" in the module pypng(https://github.com/drj11/pypng)
-        # with deletion some unnecessary functions, classes, and modules,
-        # in order to provide plugin as a one-file python file.
-        # For main function, skip to "pypng module end".
-        ##########################################################################
 
-        signature = struct.pack('8B', 137, 80, 78, 71, 13, 10, 26, 10)
-
-        class Error(Exception):
-            def __str__(self):
-                return self.__class__.__name__ + ': ' + ' '.join(self.args)
-
+        """
+        copied from "png.py" in the module pypng(https://github.com/drj11/pypng)
+        with deletion some unnecessary functions, classes, and modules,
+        in order to provide plugin as a one-file python file.
+        """
         class Reader:
 
             def __init__(self, _guess=None, filename=None, file=None, bytes=None):
@@ -65,25 +59,25 @@ class LoadVSZPNGPlugin(ToolsPlugin):
                 elif file is not None:
                     self.file = file
                 else:
-                    raise Error("expecting filename, file or bytes array")
+                    raise Exception("expecting filename, file or bytes array")
 
             def chunk(self, lenient=False):
                 self.validate_signature()
                 if not self.atchunk:
                     self.atchunk = self._chunk_len_type()
                 if not self.atchunk:
-                    raise Error("No more chunks.")
+                    raise Exception("No more chunks.")
                 length, type = self.atchunk
                 self.atchunk = None
 
                 data = self.file.read(length)
                 if len(data) != length:
-                    raise Error(
+                    raise Exception(
                         'Chunk %s too short for required %i octets.'
                         % (type, length))
                 checksum = self.file.read(4)
                 if len(checksum) != 4:
-                    raise Error('Chunk %s too short for checksum.' % type)
+                    raise Exception('Chunk %s too short for checksum.' % type)
                 verify = zlib.crc32(type)
                 verify = zlib.crc32(data, verify)
                 verify &= 2**32 - 1
@@ -96,7 +90,7 @@ class LoadVSZPNGPlugin(ToolsPlugin):
                     if lenient:
                         warnings.warn(message, RuntimeWarning)
                     else:
-                        raise Error(message)
+                        raise Exception(message)
                 return type, data
 
             def chunks(self):
@@ -107,43 +101,29 @@ class LoadVSZPNGPlugin(ToolsPlugin):
                         break
 
             def validate_signature(self):
+                signature = struct.pack('8B', 137, 80, 78, 71, 13, 10, 26, 10)
                 if self.signature:
                     return
                 self.signature = self.file.read(8)
                 if self.signature != signature:
-                    raise Error("PNG file has invalid signature.")
+                    raise Exception("PNG file has invalid signature.")
 
             def _chunk_len_type(self):
                 x = self.file.read(8)
                 if not x:
                     return None
                 if len(x) != 8:
-                    raise Error(
+                    raise Exception(
                         'End of file whilst reading chunk length and type.')
                 length, type = struct.unpack('!I4s', x)
                 if length > 2 ** 31 - 1:
-                    raise Error('Chunk %s is too large: %d.' % (type, length))
+                    raise Exception('Chunk %s is too large: %d.' % (type, length))
                 type_bytes = set(bytearray(type))
                 if not(type_bytes <= set(range(65, 91)) | set(range(97, 123))):
-                    raise Error(
+                    raise Exception(
                         'Chunk %r has invalid Chunk Type.'
                         % list(type))
                 return length, type
-
-        def write_chunk(outfile, tag, data=b''):
-            data = bytes(data)
-            outfile.write(struct.pack("!I", len(data)))
-            outfile.write(tag)
-            outfile.write(data)
-            checksum = zlib.crc32(tag)
-            checksum = zlib.crc32(data, checksum)
-            checksum &= 2 ** 32 - 1
-            outfile.write(struct.pack("!I", checksum))
-
-        def write_chunks(out, chunks):
-            out.write(signature)
-            for chunk in chunks:
-                write_chunk(out, *chunk)
 
         # Enable all commands under interface
         cmds = [cmd for cmd in dir(interface) if cmd.startswith('__') is False]
@@ -155,16 +135,13 @@ class LoadVSZPNGPlugin(ToolsPlugin):
 
         # Import normal PNG
         vszscript = ''
-        try:
-            vszpng = Reader(filename = filepath)
-            for chunk in vszpng.chunks():
-                tag = chunk[0].decode(errors="ignore")
-                content = chunk[1].decode(errors="ignore")
-                if tag == "tEXt":
-                    if content[:7] == "# Veusz":
-                        vszscript = content
-        except:
-            pass
+        vszpng = Reader(filename = filepath)
+        for chunk in vszpng.chunks():
+            tag = chunk[0].decode(errors="ignore")
+            content = chunk[1].decode(errors="ignore")
+            if tag == "tEXt":
+                if content[:7] == "# Veusz":
+                    vszscript = content
 
         if vszscript:
             # Wipe existing widgets

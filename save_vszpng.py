@@ -171,25 +171,12 @@ class SaveVSZPNGPlugin(ToolsPlugin):
         interface.Export(filepath, page=pagenum)
 
         # Add chunk to the PNG image
-        # https://stackoverflow.com/questions/9036152/insert-a-text-chunk-into-a-png-image/23180764
-        def generate_chunk_tuple(type_flag, content):
-            return tuple([type_flag, content])
-
-        def generate_text_chunk_tuple(str_info):
-            type_flag = b'tEXt'
-            return generate_chunk_tuple(type_flag, bytes(str_info, 'utf-8'))
-        
-        def insert_text_chunk(target, text, index=1):
-            if index < 0:
-                raise Exception('The index value {} less than 0!'.format(index))
-            reader = Reader(filename=target)
-            chunks = reader.chunks()
-            chunk_list = list(chunks)
-            chunk_item = generate_text_chunk_tuple(text)
-            chunk_list.insert(index, chunk_item)
-            with open(target, 'wb') as dst_file:
-                write_chunks(dst_file, chunk_list)
-
-        insert_text_chunk(filepath, selfscript)
+        reader = Reader(filename=filepath)
+        chunks = reader.chunks()
+        chunk_list = list(chunks)
+        chunk_item = tuple([b'tEXt', bytes(selfscript, 'utf-8')])
+        chunk_list.insert(1, chunk_item)
+        with open(filepath, 'wb') as f:
+            write_chunks(f, chunk_list)
 
 toolspluginregistry.append(SaveVSZPNGPlugin)
