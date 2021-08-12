@@ -72,6 +72,7 @@ class SaveVSZImagePlugin(ToolsPlugin):
     def embed_script_to_png(self, filepath, script):
         """
         The script data will be saved in tEXt chunk in the PNG file
+        modified code from https://stackoverflow.com/a/51058689
         """
         def write_chunk(outfile, tag, data=b''):
             data = bytes(data)
