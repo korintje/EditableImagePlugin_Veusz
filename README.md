@@ -1,6 +1,7 @@
-# EditableSVGPlugin_Veusz
-[Veusz](https://veusz.github.io/) plugin to Save/Load re-editable SVG image (Veusz-SVG).
+# EditableImagePlugin_Veusz
+[Veusz](https://veusz.github.io/) plugin to Save/Load re-editable images (Veusz-SVG or Veusz-PNG).
 Veusz-SVG images contain self-describing Veusz code in their `metadata` element.
+Veusz-PNG images contain self-describing Veusz code in their `tEXt` chunk.
 
 # How to install
 1. Clone this repository.
