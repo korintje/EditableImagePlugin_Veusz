@@ -20,6 +20,11 @@ class LoadVSZPNGPlugin(ToolsPlugin):
         Load "tEXt" chunk in the PNG file
         when the chunk text starts from "# Veusz" 
         """
+        import io
+        import struct
+        import warnings
+        import zlib
+        from array import array
         ##########################################################################
         # copied from "png.py" in the module pypng(https://github.com/drj11/pypng)
         # with deletion some unnecessary functions, classes, and modules,
@@ -148,7 +153,7 @@ class LoadVSZPNGPlugin(ToolsPlugin):
         # get the .png filepath
         filepath = fields['filepath']
 
-        # Import normal SVG
+        # Import normal PNG
         vszscript = ''
         try:
             vszpng = Reader(filename = filepath)
