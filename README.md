@@ -11,5 +11,5 @@ Veusz-PNG images contain self-describing Veusz code in their `tEXt` chunk.
     - If you build Veusz by yourself in your Python environment (not independent executable), you cannnot import `load_vszimg.py` and `savevszimg.py` in the current version (Veusz 3.3.1). In this case, you can alternatively use `load_vszpng.py`, `load_vszimg.py`, `save_vszpng.py`, and `save_vszpng.py` in the directory `for_self-building_env`.
 
 # How to use
-1. You can save your veusz document as Veusz-SVG from `Tools` -> `Save as Veusz-SVG`.
-1. You can load an exsisting Veusz-SVG file from `Tools` -> `Load Veusz-SVG`.
+1. You can save your veusz document as Veusz-SVG from `Tools` -> `Save Veusz-image`.
+1. You can load an exsisting Veusz-SVG file from `Tools` -> `Load Veusz-image`.
